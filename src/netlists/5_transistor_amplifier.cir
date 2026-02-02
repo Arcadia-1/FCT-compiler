@@ -1,0 +1,72 @@
+* 5-Transistor Differential Amplifier with Current Mirror Load
+* This is a classic OTA (Operational Transconductance Amplifier) design
+* Topology: Differential pair (M1, M2) with current mirror load (M3, M4) and tail current source (M5)
+
+.title 5-Transistor Amplifier
+
+* Power Supply
+VDD vdd 0 DC 5V
+
+* Input Signals
+VIN1 vin1 0 DC 2.5V AC 1m
+VIN2 vin2 0 DC 2.5V
+
+* Bias Voltage for Tail Current Source
+VBIAS vbias 0 DC 1.5V
+
+* MOSFET Models - Simple NMOS and PMOS models
+.model NMOS NMOS (LEVEL=1 VTO=0.7 KP=200u LAMBDA=0.02)
+.model PMOS PMOS (LEVEL=1 VTO=-0.7 KP=100u LAMBDA=0.02)
+
+* 5-Transistor Amplifier Core
+* M3 and M4: PMOS Current Mirror Load (connected to VDD)
+M3 vout1 vout1 vdd vdd PMOS W=20u L=2u
+M4 vout2 vout1 vdd vdd PMOS W=20u L=2u
+
+* M1 and M2: NMOS Differential Pair
+M1 vout1 vin1 vtail 0 NMOS W=10u L=2u
+M2 vout2 vin2 vtail 0 NMOS W=10u L=2u
+
+* M5: NMOS Tail Current Source
+M5 vtail vbias 0 0 NMOS W=5u L=4u
+
+* Load Capacitors (to model realistic loading)
+CL1 vout1 0 1pF
+CL2 vout2 0 1pF
+
+* Analysis Commands
+.op
+.dc VIN1 0 5 0.01
+.print dc v(vout1) v(vout2) v(vtail)
+
+.control
+run
+echo ""
+echo "================================"
+echo "Operating Point Analysis"
+echo "================================"
+echo ""
+echo "Node Voltages:"
+print v(vout1) v(vout2) v(vtail)
+echo ""
+echo "Transistor Drain Currents (A):"
+print @m1[id] @m2[id] @m3[id] @m4[id] @m5[id]
+echo ""
+echo "M1 Parameters:"
+print @m1[vgs] @m1[vds] @m1[vth]
+echo ""
+echo "M2 Parameters:"
+print @m2[vgs] @m2[vds] @m2[vth]
+echo ""
+echo "================================"
+echo "DC Sweep Analysis"
+echo "================================"
+meas dc vout1_dc FIND v(vout1) AT=2.5
+meas dc vout2_dc FIND v(vout2) AT=2.5
+echo ""
+echo "Simulation completed successfully!"
+echo ""
+quit
+.endc
+
+.end
