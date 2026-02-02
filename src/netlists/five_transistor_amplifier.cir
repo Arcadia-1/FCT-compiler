@@ -1,0 +1,87 @@
+* Five-Transistor Operational Transconductance Amplifier (OTA)
+* This is a classic differential amplifier with active current mirror load
+
+* Circuit Description:
+* - M1 and M2: Differential pair (NMOS)
+* - M3 and M4: Active current mirror load (PMOS)
+* - M5: Tail current source (NMOS)
+
+* Power supply
+VDD vdd 0 DC 5V
+VSS vss 0 DC 0V
+
+* Input signals
+VIN+ inp 0 DC 2.5V AC 0.01
+VIN- inn 0 DC 2.5V
+
+* Bias voltage for tail current source
+VBIAS vbias 0 DC 1.5V
+
+* Five transistors
+* Differential pair (NMOS)
+M1 out1 inp vtail vss NMOS W=10u L=1u
+M2 out2 inn vtail vss NMOS W=10u L=1u
+
+* Current mirror load (PMOS)
+M3 out1 out1 vdd vdd PMOS W=20u L=1u
+M4 out2 out1 vdd vdd PMOS W=20u L=1u
+
+* Tail current source (NMOS)
+M5 vtail vbias vss vss NMOS W=20u L=1u
+
+* Load capacitors (for stability)
+CL1 out1 0 1pF
+CL2 out2 0 1pF
+
+* MOSFET Models (simplified)
+.model NMOS NMOS (
++ VTO=0.7 KP=100u LAMBDA=0.01 
++ GAMMA=0.4 PHI=0.7
++ TOX=1e-8 CGSO=1e-10 CGDO=1e-10
++ CJ=1e-4 MJ=0.5 CJSW=1e-10 MJSW=0.33
++ PB=0.8)
+
+.model PMOS PMOS (
++ VTO=-0.7 KP=50u LAMBDA=0.01
++ GAMMA=0.4 PHI=0.7
++ TOX=1e-8 CGSO=1e-10 CGDO=1e-10
++ CJ=1e-4 MJ=0.5 CJSW=1e-10 MJSW=0.33
++ PB=0.8)
+
+* Analysis commands
+.OP
+.DC VIN+ 0 5 0.01
+.AC DEC 10 1 1e9
+.TRAN 0.1n 100n
+
+* Output commands
+.print DC V(out1) V(out2) V(vtail)
+.print AC VDB(out2) VP(out2)
+.print TRAN V(out1) V(out2)
+
+.control
+* Run DC analysis
+run
+echo "DC Operating Point Analysis Complete"
+print v(out1) v(out2) v(vtail)
+
+* Run AC analysis for frequency response
+ac dec 10 1 1e9
+echo "AC Analysis Complete"
+plot vdb(out2) title "Frequency Response"
+plot vp(out2) title "Phase Response"
+
+* Run DC sweep
+dc VIN+ 0 5 0.01
+echo "DC Sweep Analysis Complete"
+plot v(out2) vs v(inp) title "Transfer Characteristic"
+
+* Show gain calculation
+meas ac gain_db MAX vdb(out2)
+echo "Voltage Gain (dB):"
+print gain_db
+
+quit
+.endc
+
+.end
